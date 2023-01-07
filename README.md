@@ -18,6 +18,6 @@ A text splitter that splits a large text file into several smaller text files by
 
 ### 展示
 
-![GUI界面](https://github.com/aoguai/SplitFiles/blob/main/images/0.png)
+![GUI界面](https://github.com/aoguai/SplitFiles/blob/master/images/0.png)
 
-![导出效果](https://github.com/aoguai/SplitFiles/blob/main/images/1.png)
+![导出效果](https://github.com/aoguai/SplitFiles/blob/master/images/1.png)
