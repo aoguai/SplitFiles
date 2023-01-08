@@ -59,13 +59,10 @@ class SplitFiles():
 
     def write_file(self, part_num, temp_count, *line_content):
         """将按行分割后的内容写入相应的分割文件中"""
-        # print(temp_count)
         part_file_name = self.get_part_file_name(part_num, temp_count)
-        # print(line_content)
         try:
             with open(part_file_name, "w", encoding='UTF-8') as part_file:
                 part_file.writelines(line_content[0])
-                print(self.windows.progress_bar.value(), self.total_lines)
                 if self.windows.progress_bar.value() >= self.total_lines:
                     self.windows.progress_bar.reset()  # Reset progress bar
                     QMessageBox.information(self.windows, "已完成", "文件分割已完成！")
