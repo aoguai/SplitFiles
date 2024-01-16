@@ -1,4 +1,4 @@
-name: Commit Check
+name: Check PR Title
 
 on:
   pull_request:
@@ -7,27 +7,18 @@ on:
       - synchronize
 
 jobs:
-  commit-check:
+  check:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Check commit messages and PR title
-        run: |
-          commits=$(git log --pretty=format:"%s" ${GITHUB_BEFORE}..${GITHUB_SHA})
-          pr_title=$(git log --pretty=format:"%s" -n 1 ${{ github.sha || github.event.after }})
-
-          # Check commit messages
-          if [[ ! -z "$commits" && ! "$commits" =~ ^(build|ci|chore|docs|feat|fix|perf|refactor|revert|style|test)(\(.+\))?:\s.+$ ]]; then
-            echo "Invalid commit message. Please follow the Conventional Commits standard."
-            echo "Example: feat(component): add new feature"
-            exit 1
-          fi
-
-          # Check PR title
-          if [[ ! "$pr_title" =~ ^(build|ci|chore|docs|feat|fix|perf|refactor|revert|style|test)(\(.+\))?:\s.+$ ]]; then
-            echo "Invalid PR title. Please follow the Conventional Commits standard."
-            echo "Example: feat(component): add new feature"
-            exit 1
-          fi
+    - name: Check PR title
+      run: |
+        pr_title=$(git log --format=%s --no-merges -n 1 ${{ github.event.before }}..${{ github.sha }})
+        regex_pattern="^(feat|fix|chore|docs|style|refactor|test)(\(.+\))?: .+"
+        if [[ ! $pr_title =~ $regex_pattern ]]; then
+          echo "error: Invalid PR title. Please follow the commit message convention."
+          exit 1
+        fi
