@@ -15,7 +15,7 @@ jobs:
 
       - name: Check commit messages and PR title
         run: |
-          commits=$(git log --pretty=format:"%s" ${{ github.event.before }}..${{ github.sha || github.event.after }})
+          commits=$(git log --pretty=format:"%s" ${GITHUB_BEFORE}..${GITHUB_SHA})
           pr_title=$(git log --pretty=format:"%s" -n 1 ${{ github.sha || github.event.after }})
 
           # Check commit messages
