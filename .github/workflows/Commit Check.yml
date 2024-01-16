@@ -15,8 +15,8 @@ jobs:
 
       - name: Check commit messages and PR title
         run: |
-          commits=$(git log --pretty=format:"%s" $GITHUB_SHA^..$GITHUB_SHA)
-          pr_title=$(git log --pretty=format:"%s" -n 1 $GITHUB_SHA)
+          commits=$(git log --pretty=format:"%s" ${{ github.event.before }}..${{ github.sha || github.event.after }})
+          pr_title=$(git log --pretty=format:"%s" -n 1 ${{ github.sha || github.event.after }})
 
           # Check commit messages
           if [[ ! -z "$commits" && ! "$commits" =~ ^(build|ci|chore|docs|feat|fix|perf|refactor|revert|style|test)(\(.+\))?:\s.+$ ]]; then
