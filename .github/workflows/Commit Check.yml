@@ -1,0 +1,31 @@
+name: Check PR Title
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: Get PR Title
+        id: pr_title
+        run: echo "::set-output name=title::$(git show -s --format=%s)"
+
+      - name: Check PR Title Format
+        run: |
+          pr_title="${{ steps.pr_title.outputs.title }}"
+          regex_pattern="^(feat|fix|chore|docs|style|refactor|test)(\(.+\))?: .+"
+          if [[ ! $pr_title =~ $regex_pattern ]]; then
+            echo "error: Invalid PR title. Please follow the commit message convention."
+            exit 1
+          fi
