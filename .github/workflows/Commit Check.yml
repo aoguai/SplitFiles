@@ -1,0 +1,33 @@
+name: Commit Check
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  commit-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Check commit messages and PR title
+        run: |
+          commits=$(git log --pretty=format:"%s" origin/main..$GITHUB_SHA)
+          pr_title=$(git log --pretty=format:"%s" -n 1 $GITHUB_SHA)
+
+          # Check commit messages
+          if [[ ! -z "$commits" && ! "$commits" =~ ^(build|ci|chore|docs|feat|fix|perf|refactor|revert|style|test)(\(.+\))?:\s.+$ ]]; then
+            echo "Invalid commit message. Please follow the Conventional Commits standard."
+            echo "Example: feat(component): add new feature"
+            exit 1
+          fi
+
+          # Check PR title
+          if [[ ! "$pr_title" =~ ^(build|ci|chore|docs|feat|fix|perf|refactor|revert|style|test)(\(.+\))?:\s.+$ ]]; then
+            echo "Invalid PR title. Please follow the Conventional Commits standard."
+            echo "Example: feat(component): add new feature"
+            exit 1
+          fi
