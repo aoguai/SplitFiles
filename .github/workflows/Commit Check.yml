@@ -15,7 +15,7 @@ jobs:
 
       - name: Check commit messages and PR title
         run: |
-          commits=$(git log --pretty=format:"%s" origin/main..$GITHUB_SHA)
+          commits=$(git log --pretty=format:"%s" $GITHUB_SHA^..$GITHUB_SHA)
           pr_title=$(git log --pretty=format:"%s" -n 1 $GITHUB_SHA)
 
           # Check commit messages
