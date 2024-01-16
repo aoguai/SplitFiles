@@ -16,7 +16,7 @@ jobs:
 
     - name: Check PR title
       run: |
-        pr_title=$(git log --format=%s --no-merges -n 1 ${{ github.event.before }}..${{ github.sha }})
+        pr_title=$(git log --format=%s --no-merges -n 1 ${{ github.event.before }}..${{ github.event.after }})
         regex_pattern="^(feat|fix|chore|docs|style|refactor|test)(\(.+\))?: .+"
         if [[ ! $pr_title =~ $regex_pattern ]]; then
           echo "error: Invalid PR title. Please follow the commit message convention."
