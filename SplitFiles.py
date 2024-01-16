@@ -47,14 +47,14 @@ class SplitFiles():
     def get_part_file_name(self, part_num, temp_count):
         """"获取分割后的文件名称：如果未指定目录，则在源文件相同目录下建立临时文件夹temp_part_file，然后将分割后的文件放到该路径下"""
         temp_path = os.path.dirname(self.file_name)  # 获取文件的路径（不含文件名）
-        temp_name = os.path.splitext(os.path.basename(self.file_name))[0]
+        temp_name, file_extension = os.path.splitext(os.path.basename(self.file_name))
         if self.part_path == '':
             part_file_name = temp_path + os.sep + temp_name
         else:
             part_file_name = self.part_path
         if not os.path.exists(part_file_name):  # 如果临时目录不存在则创建
             os.makedirs(part_file_name)
-        part_file_name += os.sep + temp_name + "_part" + str(part_num) + "_" + str(temp_count) + ".txt"
+        part_file_name += os.sep + temp_name + "_part" + str(part_num) + "_" + str(temp_count) + file_extension
         return part_file_name
 
     def write_file(self, part_num, temp_count, *line_content):
