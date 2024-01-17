@@ -11,15 +11,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout PR
-        uses: actions/checkout@v2
+      - name: Get Current PR
+        uses: 8BitJonny/gh-get-current-pr@2.2.0
+        id: PR
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          github-token: ${{ github.token }}
+          sha: ${{ github.event.pull_request.head.sha }}
+          filterOutClosed: true
+          filterOutDraft: true
 
-      - name: Get PR Title
-        id: pr_title
-        run: echo "::set-output name=title::$(git show -s --format=%s)"
+      - run: echo "PR ${prNumber} ${prTitle} at ${prUrl} is ${prJSON}"
+        if: steps.PR.outputs.pr_found == 'true'
+        env:
+          prJSON: ${{ toJSON(fromJSON(steps.PR.outputs.pr)) }}
+          prNumber: ${{ steps.PR.outputs.number }}
+          prUrl: ${{ steps.PR.outputs.pr_url }}
+          prTitle: ${{ steps.PR.outputs.pr_title }}
+          prBody: ${{ steps.PR.outputs.pr_body }}
+          prCreatedAt: ${{ steps.PR.outputs.pr_created_at }}
+          prMergedAt: ${{ steps.PR.outputs.pr_merged_at }}
+          prClosedAt: ${{ steps.PR.outputs.pr_closed_at }}
+          prLabel: ${{ steps.PR.outputs.pr_labels }}
 
       - name: Check PR Title Format
         run: |
