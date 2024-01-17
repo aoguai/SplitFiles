@@ -50,6 +50,20 @@ class SplitFileGUI(QWidget):
         self.setWindowIcon(QIcon(pixmap))
         self.show()
 
+    def handle_events(self, code, data = None):
+        if (code == 0):
+            self.progress_bar.setRange(1, data)  # Set range of progress bar
+            return
+        
+        if (code == 1):
+            self.progress_bar.setValue(self.progress_bar.value() + 1)  # Update progress bar value
+            return
+
+        if (code == -1): 
+            self.progress_bar.reset()  # Reset progress bar
+            QMessageBox.information(self, "已完成", "文件分割已完成！")
+            return
+
     def split_file(self):
         file_name = self.file_name_field.text()
         if len(self.line_count_field.text().strip()) > 0:
@@ -64,8 +78,10 @@ class SplitFileGUI(QWidget):
             return
         part_path = self.part_path_field.text()
 
-        sf = SplitFiles(self, file_name, line_count, part_path)
-        sf.split_file()
+        self.sf = SplitFiles(self, file_name, line_count, part_path)
+        self.sf.start()
+        # 线程自定义信号连接的槽函数
+        self.sf.trigger.connect(self.handle_events)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
