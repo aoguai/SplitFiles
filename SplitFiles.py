@@ -1,5 +1,12 @@
 import os
+import chardet
 from PyQt5.QtCore import QThread, pyqtSignal
+
+
+def detect_file_encoding(file_path):
+    with open(file_path, 'rb') as file:
+        # 读取文件前 1024 字节，用于判断文件编码
+        return chardet.detect(file.read(1024))['encoding']
 
 
 class SplitFiles(QThread):
@@ -44,34 +51,38 @@ class SplitFiles(QThread):
         4. 发送信号通知主窗口分割进度
         """
 
-        if self.file_name and os.path.exists(self.file_name):
-            try:
-                with open(self.file_name, encoding='UTF-8') as f:
-                    self.total_lines = sum(1 for _ in f)
+        if not self.file_name or not os.path.exists(self.file_name):
+            print("%s 不是有效的文件" % self.file_name)
+            return
 
-                self.trigger.emit(0, self.total_lines)
+        try:
+            with open(self.file_name, encoding=detect_file_encoding(self.file_name)) as f:
+                self.total_lines = sum(1 for _ in f)
 
-                with open(self.file_name, encoding='UTF-8') as f:
-                    temp_count = 0
-                    temp_content = []
-                    part_num = 1
-                    for line in f:
-                        if temp_count < self.line_count:
-                            temp_count += 1
-                        else:
-                            self.write_file(part_num, temp_count, temp_content)
-                            part_num += 1
-                            temp_count = 1
-                            temp_content = []
-                        temp_content.append(line)
+            self.trigger.emit(0, self.total_lines)
 
-                        self.trigger.emit(1, None)
+            with open(self.file_name, encoding=detect_file_encoding(self.file_name)) as f:
+                temp_count = 0
+                temp_content = []
+                part_num = 1
+
+                for line_count, line in enumerate(f, start=1):
+                    if temp_count < self.line_count:
+                        temp_count += 1
                     else:
                         self.write_file(part_num, temp_count, temp_content)
-            except IOError as err:
-                print(err)
-        else:
-            print("%s is not a valid file" % self.file_name)
+                        part_num += 1
+                        temp_count = 1
+                        temp_content = []
+
+                    temp_content.append(line)
+                    self.trigger.emit(1, None)
+
+                else:
+                    self.write_file(part_num, temp_count, temp_content)
+
+        except IOError as err:
+            print(err)
 
     def get_part_file_name(self, part_num, temp_count):
         """
@@ -88,18 +99,19 @@ class SplitFiles(QThread):
         :rtype: str
         """
 
-        temp_path = os.path.dirname(self.file_name)
         temp_name, file_extension = os.path.splitext(os.path.basename(self.file_name))
         if self.part_path == '':
-            part_file_name = temp_path + os.sep + temp_name
+            temp_path = os.path.join(os.path.dirname(self.file_name), temp_name)
         else:
-            part_file_name = self.part_path
-        if not os.path.exists(part_file_name):
-            os.makedirs(part_file_name)
-        part_file_name += os.sep + temp_name + "_part" + str(part_num) + "_" + str(temp_count) + file_extension
+            temp_path = self.part_path
+
+        if not os.path.exists(temp_path):
+            os.makedirs(temp_path)
+
+        part_file_name = f"{temp_path}{os.sep}{temp_name}_part{part_num}_{temp_count}{file_extension}"
         return part_file_name
 
-    def write_file(self, part_num, temp_count, *line_content):
+    def write_file(self, part_num, temp_count, line_content):
         """
         将按行分割后的内容写入相应的分割文件中
 
@@ -108,14 +120,14 @@ class SplitFiles(QThread):
         :param temp_count: 临时计数，用于文件名
         :type temp_count: int
         :param line_content: 分割后的内容
-        :type line_content: tuple
+        :type line_content: list
         """
 
         part_file_name = self.get_part_file_name(part_num, temp_count)
+
         try:
-            with open(part_file_name, "w", encoding='UTF-8') as part_file:
-                part_file.writelines(line_content[0])
-                if self.windows.progress_bar.value() >= self.total_lines:
-                    self.trigger.emit(-1, None)
+            with open(part_file_name, "w", encoding=detect_file_encoding(self.file_name)) as part_file:
+                part_file.writelines(line_content)
+
         except IOError as err:
             print(err)

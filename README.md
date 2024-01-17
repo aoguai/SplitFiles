@@ -16,10 +16,43 @@ A text splitter that splits a large text file into several smaller text files by
 1. 对中文与特殊符号友好
 2. 效率高，速度快
 
-个人测试 13G txt 文件共 1.4亿行 分割为单文本 1700 W 行，耗时不到3分钟
+### 贡献者们
+
+感谢以下贡献者们对本项目作出的贡献:
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="100%"><a href="https://github.com/darnell8"><img src="https://avatars.githubusercontent.com/u/119397407?v=4?s=100" width="100px;" alt="darnell8"/><br /><sub><b>darnell8</b></sub></a><br /><a href="https://github.com/aoguai/SplitFiles/commits/master?author=darnell8" title="Code">💻</a><a href="https://github.com/aoguai/SplitFiles//issues?q=author:darnell8" title="Bug reports">🐛</a><a href="https://github.com/aoguai/SplitFiles/commits/master?author=darnell8" title="Bug reports">🚧</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+您可以直接在 [issues](https://github.com/aoguai/QQtoExcel/issues)
+中提出您的问题。
+
+同时你可以通过查看 [CONTRIBUTING.md](https://github.com/aoguai/SplitFiles/blob/master/docs/CONTRIBUTING.md)
+了解如何贡献您的代码。
 
 ### 展示
 
 ![GUI界面](https://github.com/aoguai/SplitFiles/blob/master/images/0.png)
 
 ![导出效果](https://github.com/aoguai/SplitFiles/blob/master/images/1.png)
+
+## License 说明
+
+[SplitFiles](https://github.com/aoguai/SplitFiles) 遵循 [MIT license](LICENSE)。
+
+我们严禁所有通过本程序违反任何国家法律的行为，请在法律范围内使用本程序。
+
+默认情况下，使用此项目将被视为您同意我们的规则。请务必遵守道德和法律标准。
+
+如果您不遵守，您将对后果负责，作者将不承担任何责任！
