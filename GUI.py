@@ -8,6 +8,12 @@ from SplitFiles import SplitFiles
 
 class SplitFileGUI(QWidget):
     def __init__(self):
+        """
+        初始化 GUI 界面
+
+        包括拖放文件支持、进度条、输入字段、文本提示、按钮、布局和窗口属性的设置。
+        """
+
         super().__init__()
         # 支持拖放文件
         self.setAcceptDrops(True)
@@ -50,21 +56,36 @@ class SplitFileGUI(QWidget):
         self.setWindowIcon(QIcon(pixmap))
         self.show()
 
-    def handle_events(self, code, data = None):
+    def handle_events(self, code, data=None):
+        """
+        处理线程事件，更新进度条和显示分割完成信息。
+
+        :param code: 事件代码，0表示设置进度条范围，1表示更新进度条值，-1表示分割完成
+        :type code: int
+        :param data: 事件数据，用于设置进度条范围的最大值
+        :type data: int or None
+        """
+
         if (code == 0):
             self.progress_bar.setRange(1, data)  # Set range of progress bar
             return
-        
+
         if (code == 1):
             self.progress_bar.setValue(self.progress_bar.value() + 1)  # Update progress bar value
             return
 
-        if (code == -1): 
+        if (code == -1):
             self.progress_bar.reset()  # Reset progress bar
             QMessageBox.information(self, "已完成", "文件分割已完成！")
             return
 
     def split_file(self):
+        """
+        获取用户输入，创建 SplitFiles 线程对象，并启动分割文件的线程。
+
+        如果输入不合法，显示相应警告信息。
+        """
+
         file_name = self.file_name_field.text()
         if len(self.line_count_field.text().strip()) > 0:
             line_count = int(self.line_count_field.text())
@@ -84,12 +105,28 @@ class SplitFileGUI(QWidget):
         self.sf.trigger.connect(self.handle_events)
 
     def dragEnterEvent(self, event):
+        """
+        重写拖放事件的处理方法，接受文本文件的拖放。
+
+        :param event: 拖放事件
+        :type event: QDragEnterEvent
+        """
+
         if event.mimeData().hasUrls():
             event.accept()
         else:
             event.ignore()
 
     def dropEvent(self, event):
+        """
+        重写拖放事件的处理方法，获取拖放的文本文件路径，并显示在文件名字段中。
+
+        如果文件类型不是文本文件，显示相应警告信息。
+
+        :param event: 拖放事件
+        :type event: QDropEvent
+        """
+
         # Get the file path from the dropped file
         file_path = event.mimeData().urls()[0].toLocalFile()
         if file_path[-4:] == '.txt' or file_path[-4:] == '.csv':
