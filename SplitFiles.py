@@ -33,6 +33,8 @@ class SplitFiles(QThread):
         self.part_path = part_path
         self.windows = self_windows
         self.total_lines = 0
+        self.current_lines = 1
+        self.current_precent = 0
 
     def run(self):
         """
@@ -74,13 +76,16 @@ class SplitFiles(QThread):
                         part_num += 1
                         temp_count = 1
                         temp_content = []
-
                     temp_content.append(line)
-                    self.trigger.emit(1, None)
+                    self.current_lines += 1
+
+                    # 当进度百分比变化时才发送信号1更改状态
+                    if (self.current_precent != int((self.current_lines / self.total_lines) * 100)):
+                        self.current_precent = int((self.current_lines / self.total_lines) * 100)
+                        self.trigger.emit(1, self.current_precent)
 
                 else:
                     self.write_file(part_num, temp_count, temp_content)
-
         except IOError as err:
             print(err)
 

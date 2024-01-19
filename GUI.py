@@ -1,8 +1,8 @@
 import base64
 import sys
-from PyQt5.QtGui import QIcon, QPixmap, QDragEnterEvent, QDropEvent
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QProgressBar, \
-    QMessageBox
+from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QMessageBox
+from ProgressBarUI import ProgressBarUI
 from SplitFiles import SplitFiles
 
 
@@ -17,9 +17,9 @@ class SplitFileGUI(QWidget):
         super().__init__()
         # 支持拖放文件
         self.setAcceptDrops(True)
-
-        # 创建进度条
-        self.progress_bar = QProgressBar(self)
+        # 调用Drops方法
+        # Create progress bar
+        self.progress_bar_ui = ProgressBarUI()
 
         # 创建输入字段
         self.file_name_field = QLineEdit()
@@ -31,9 +31,9 @@ class SplitFileGUI(QWidget):
         line_count_prompt = QLabel('请输入欲分割行数：')
         part_path_prompt = QLabel('请输入欲保存的目录(留空默认当前目录下自动新建子目录)：')
 
-        # 创建按钮
-        split_button = QPushButton('开始分割')
-        split_button.clicked.connect(self.split_file)
+        # Create button
+        self.split_button = QPushButton('分割文件')
+        self.split_button.clicked.connect(self.split_file)
 
         # 创建布局
         layout = QGridLayout()
@@ -43,8 +43,8 @@ class SplitFileGUI(QWidget):
         layout.addWidget(self.line_count_field, 1, 1)
         layout.addWidget(part_path_prompt, 2, 0)
         layout.addWidget(self.part_path_field, 2, 1)
-        layout.addWidget(split_button, 3, 0, 1, 2)
-        layout.addWidget(self.progress_bar, 5, 0, 1, 2)
+        layout.addWidget(self.split_button, 3, 0, 1, 2)
+        layout.addWidget(self.progress_bar_ui, 5, 0, 1, 2)
         self.setLayout(layout)
 
         # 设置窗口图标
@@ -61,22 +61,22 @@ class SplitFileGUI(QWidget):
         """
         处理线程事件，更新进度条和显示分割完成信息。
 
-        :param code: 事件代码，0表示设置进度条范围，1表示更新进度条值
+        :param code: 事件代码，0表示更新总量，1表示更新进度条值
         :type code: int
         :param data: 事件数据，用于设置进度条范围的最大值
         :type data: int or None
         """
 
-        if code == 0:
-            self.progress_bar.setRange(1, data)  # 设置进度条范围
+        print("接收到信号 %s, 承载数据为 %s" % (code, data))
+        if (code == 0):
             return
 
-        elif code == 1:
-            self.progress_bar.setValue(self.progress_bar.value() + 1)  # 更新进度条值
-            # 如果进度条值等于最大值，重置进度条并显示分割完成信息
-            if self.progress_bar.value() >= self.progress_bar.maximum():
-                self.progress_bar.reset()
+        if (code == 1):
+            self.progress_bar_ui.set_progress(data)  # Update progress bar value
+
+            if (data == 100):
                 QMessageBox.information(self, "已完成", "文件分割已完成！")
+                self.split_button.setEnabled(True)
             return
 
     def split_file(self):
@@ -101,6 +101,9 @@ class SplitFileGUI(QWidget):
         self.sf.start()
         # 线程自定义信号连接的槽函数
         self.sf.trigger.connect(self.handle_events)
+        # 重置滚动条
+        self.progress_bar_ui.reset()
+        self.split_button.setEnabled(False)
 
     def dragEnterEvent(self, event):
         """
