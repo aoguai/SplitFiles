@@ -54,7 +54,7 @@ class SplitFileGUI(QWidget):
         self.setWindowIcon(QIcon(pixmap))
 
         # 设置窗口属性
-        self.setWindowTitle('奥怪文本分割v1.1')
+        self.setWindowTitle('奥怪文本分割v1.2')
         self.show()
 
     def handle_events(self, code, data=None):

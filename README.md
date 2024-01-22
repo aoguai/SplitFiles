@@ -74,6 +74,35 @@ python GUI.py
 同时你可以通过查看 [CONTRIBUTING.md](https://github.com/aoguai/SplitFiles/blob/master/docs/CONTRIBUTING.md)
 了解如何贡献您的代码。
 
+## 开发规划
+
+### 规划
+
+功能规划
+
+- [ ] 支持 批量切割文件
+- [ ] 支持 更多文件编码格式
+- [ ] 支持 更多类型文件切割
+- [ ] 支持 限制切割文件大小
+
+### 更新日志
+
+- **2023/01/22 SplitFilesV1.2.0 版本更新**
+  - 更新 README
+  - **支持 切割 csv 类型文件**
+  - 重构 代码结构，使代码更加规范
+  - 修复 分割大文件时拖动UI卡顿问题
+  - 修复 阻塞主线程BUG,异步化切割线程
+
+<details> 
+    <summary>往期更新日志</summary>
+
+- **2023/01/08 SplitFilesV1.1.0 版本更新**
+  - 支持 拖拽文件导入路径
+- **2023/01/07 SplitFilesV1.0.0 版本更新**
+  - 项目 创建
+</details>
+
 ## License 说明
 
 [SplitFiles](https://github.com/aoguai/SplitFiles) 遵循 [MIT license](LICENSE)。
