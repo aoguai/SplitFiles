@@ -1,7 +1,8 @@
 import base64
+import os
 import sys
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QMessageBox
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QMessageBox, QFileDialog
 from ProgressBarUI import ProgressBarUI
 from SplitFiles import SplitFiles
 
@@ -23,11 +24,15 @@ class SplitFileGUI(QWidget):
 
         # 创建输入字段
         self.file_name_field = QLineEdit()
+        # 为输入框添加双击事件
+        self.file_name_field.setReadOnly(True)
+        self.file_name_field.setMouseTracking(True)
+        self.file_name_field.installEventFilter(self)
         self.line_count_field = QLineEdit()
         self.part_path_field = QLineEdit()
 
         # 创建文本提示
-        file_name_prompt = QLabel('请输入欲分割的文本文件路径：')
+        file_name_prompt = QLabel('请输入欲分割的文件路径：')
         line_count_prompt = QLabel('请输入欲分割行数：')
         part_path_prompt = QLabel('请输入欲保存的目录(留空默认当前目录下自动新建子目录)：')
 
@@ -54,7 +59,7 @@ class SplitFileGUI(QWidget):
         self.setWindowIcon(QIcon(pixmap))
 
         # 设置窗口属性
-        self.setWindowTitle('奥怪文本分割v1.2')
+        self.setWindowTitle('奥怪文件分割v1.2')
         self.show()
 
     def handle_events(self, code, data=None):
@@ -67,14 +72,14 @@ class SplitFileGUI(QWidget):
         :type data: int or None
         """
 
-        print("接收到信号 %s, 承载数据为 %s" % (code, data))
-        if (code == 0):
+        # print("接收到信号 %s, 承载数据为 %s" % (code, data))
+        if code == 0:
             return
 
-        if (code == 1):
+        if code == 1:
             self.progress_bar_ui.set_progress(data)  # Update progress bar value
 
-            if (data == 100):
+            if data == 100:
                 QMessageBox.information(self, "已完成", "文件分割已完成！")
                 self.split_button.setEnabled(True)
             return
@@ -96,6 +101,12 @@ class SplitFileGUI(QWidget):
             return
 
         part_path = self.part_path_field.text()
+        if part_path:
+            if not os.path.exists(part_path):
+                QMessageBox.information(self, "警告", "请输入有效的保存目录")
+                return
+        else:
+            part_path = ''
 
         self.sf = SplitFiles(self, file_name, line_count, part_path)
         self.sf.start()
@@ -127,11 +138,22 @@ class SplitFileGUI(QWidget):
         """
 
         file_path = event.mimeData().urls()[0].toLocalFile()
-        if file_path.endswith(('.txt', '.csv')):
+        if file_path.endswith(('.txt', '.csv', '.jsonl')):
             # 将文件名字段设置为文件路径
             self.file_name_field.setText(file_path)
         else:
-            QMessageBox.information(self, "警告", "只支持文本文件")
+            QMessageBox.information(self, "警告", "只支持可分割文件")
+
+    def eventFilter(self, obj, event):
+        if obj == self.file_name_field and event.type() == 2:  # 2表示鼠标双击事件
+            self.select_file()
+        return super().eventFilter(obj, event)
+
+    def select_file(self):
+        file_dialog = QFileDialog(self)
+        file_path, _ = file_dialog.getOpenFileName(self, "选择文件", "", "可分割文件 (*.txt; *.csv; *.jsonl)")
+        if file_path:
+            self.file_name_field.setText(file_path)
 
 
 if __name__ == '__main__':

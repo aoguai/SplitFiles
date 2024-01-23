@@ -27,7 +27,7 @@ jobs:
 
     - name: Build executable
       run: |
-        pyinstaller -F -w -n SplitFiles --icon=assets/logo.ico --hidden-import=PyQt5 src/GUI.py src/SplitFiles.py
+        pyinstaller -F -w -n SplitFiles --icon=assets/logo.ico --version-file assets/my.txt --hidden-import=PyQt5 src/GUI.py src/SplitFiles.py
         python -m zipfile -c ${{ github.workspace }}/SplitFiles.zip ${{ github.workspace }}/dist/SplitFiles.exe
 
     # tag 查询github-Release

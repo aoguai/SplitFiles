@@ -58,33 +58,37 @@ class SplitFiles(QThread):
             return
 
         try:
+            # 获取总行数
             with open(self.file_name, encoding=detect_file_encoding(self.file_name)) as f:
                 self.total_lines = sum(1 for _ in f)
 
             self.trigger.emit(0, self.total_lines)
 
+            # 逐行读取源文件，按设定行数分割并写入新文件
             with open(self.file_name, encoding=detect_file_encoding(self.file_name)) as f:
                 temp_count = 0
                 temp_content = []
                 part_num = 1
 
                 for line_count, line in enumerate(f, start=1):
-                    if temp_count < self.line_count:
-                        temp_count += 1
-                    else:
+                    temp_content.append(line)
+                    temp_count += 1
+
+                    if temp_count == self.line_count:
                         self.write_file(part_num, temp_count, temp_content)
                         part_num += 1
-                        temp_count = 1
+                        temp_count = 0
                         temp_content = []
-                    temp_content.append(line)
+
                     self.current_lines += 1
 
                     # 当进度百分比变化时才发送信号1更改状态
-                    if (self.current_precent != int((self.current_lines / self.total_lines) * 100)):
-                        self.current_precent = int((self.current_lines / self.total_lines) * 100)
+                    current_percent = int((self.current_lines / self.total_lines) * 100)
+                    if self.current_precent != current_percent:
+                        self.current_precent = current_percent
                         self.trigger.emit(1, self.current_precent)
 
-                else:
+                if temp_content:
                     self.write_file(part_num, temp_count, temp_content)
         except IOError as err:
             print(err)

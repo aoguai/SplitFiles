@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QProgressBar, QVBoxLayout
 
+
 class ProgressBarUI(QWidget):
     def __init__(self):
         super().__init__()
@@ -27,5 +28,4 @@ class ProgressBarUI(QWidget):
         self.progress_bar.setValue(value)
 
     def reset(self):
-       
         self.progress_bar.reset()
