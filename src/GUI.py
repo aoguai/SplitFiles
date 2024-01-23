@@ -2,7 +2,7 @@ import base64
 import os
 import sys
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QMessageBox, QFileDialog
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QMessageBox, QFileDialog, QRadioButton, QButtonGroup
 from ProgressBarUI import ProgressBarUI
 from SplitFiles import SplitFiles
 
@@ -31,9 +31,20 @@ class SplitFileGUI(QWidget):
         self.line_count_field = QLineEdit()
         self.part_path_field = QLineEdit()
 
+        # 创建一个按钮组
+        self.buttonGroup = QButtonGroup()
+    
+        self.line_radio_button = QRadioButton("按行数分割")
+        self.line_radio_button.setChecked(True)  # 默认按行数分割
+        self.size_radio_button = QRadioButton("按大小分割")
+        self.size_radio_button.setChecked(False) 
+
+        self.buttonGroup.addButton(self.size_radio_button)
+        self.buttonGroup.addButton(self.line_radio_button)
+
         # 创建文本提示
         file_name_prompt = QLabel('请输入欲分割的文件路径：')
-        line_count_prompt = QLabel('请输入欲分割行数：')
+        line_count_prompt = QLabel('请输入欲分割行数/大小kb：')
         part_path_prompt = QLabel('请输入欲保存的目录(留空默认当前目录下自动新建子目录)：')
 
         # Create button
@@ -44,12 +55,14 @@ class SplitFileGUI(QWidget):
         layout = QGridLayout()
         layout.addWidget(file_name_prompt, 0, 0)
         layout.addWidget(self.file_name_field, 0, 1)
-        layout.addWidget(line_count_prompt, 1, 0)
-        layout.addWidget(self.line_count_field, 1, 1)
-        layout.addWidget(part_path_prompt, 2, 0)
-        layout.addWidget(self.part_path_field, 2, 1)
-        layout.addWidget(self.split_button, 3, 0, 1, 2)
-        layout.addWidget(self.progress_bar_ui, 5, 0, 1, 2)
+        layout.addWidget(self.line_radio_button, 1, 0)
+        layout.addWidget(self.size_radio_button, 1, 1)
+        layout.addWidget(line_count_prompt, 2, 0)
+        layout.addWidget(self.line_count_field, 2, 1)
+        layout.addWidget(part_path_prompt, 3, 0)
+        layout.addWidget(self.part_path_field, 3, 1)
+        layout.addWidget(self.split_button, 5, 0, 1, 2)
+        layout.addWidget(self.progress_bar_ui, 6, 0, 1, 2)
         self.setLayout(layout)
 
         # 设置窗口图标
@@ -100,6 +113,10 @@ class SplitFileGUI(QWidget):
             QMessageBox.information(self, "警告", "请输入有效的分割行数（大于0的整数）")
             return
 
+        if not file_name or not os.path.exists(file_name):
+            QMessageBox.information(self, "警告", "%s 不是有效的文件" % file_name)
+            return
+
         part_path = self.part_path_field.text()
         if part_path:
             if not os.path.exists(part_path):
@@ -108,7 +125,10 @@ class SplitFileGUI(QWidget):
         else:
             part_path = ''
 
-        self.sf = SplitFiles(self, file_name, line_count, part_path)
+        if self.size_radio_button.isChecked():
+            self.sf = SplitFiles(self, file_name, part_path, None, line_count)
+        else:
+            self.sf = SplitFiles(self, file_name, part_path, line_count, None)
         self.sf.start()
         # 线程自定义信号连接的槽函数
         self.sf.trigger.connect(self.handle_events)
@@ -158,5 +178,10 @@ class SplitFileGUI(QWidget):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+
+    # 加载QSS文件
+    # with open('style/lightstyle.qss', 'r') as file:
+    #     app.setStyleSheet(file.read())
+
     gui = SplitFileGUI()
     sys.exit(app.exec_())

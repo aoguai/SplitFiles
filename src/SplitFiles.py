@@ -13,7 +13,7 @@ class SplitFiles(QThread):
     trigger = pyqtSignal(int, object)
     """按行分割文件"""
 
-    def __init__(self, self_windows, file_name, line_count=200, part_path=''):
+    def __init__(self, self_windows, file_name, part_path='', line_count=200, max_file_size_kb=10):
         """
         初始化分割文件的线程对象
 
@@ -35,13 +35,16 @@ class SplitFiles(QThread):
         self.total_lines = 0
         self.current_lines = 1
         self.current_precent = 0
+        self.max_file_size_kb = max_file_size_kb
 
     def run(self):
         """
         重写 QThread 的 run 方法，在线程启动时执行分割文件的操作
         """
-
-        self.split_file()
+        if (self.max_file_size_kb):
+            self.split_file_by_size()
+        else:
+            self.split_file()
 
     def split_file(self):
         """
@@ -58,29 +61,26 @@ class SplitFiles(QThread):
             return
 
         try:
-            # 获取总行数
-            with open(self.file_name, encoding=detect_file_encoding(self.file_name)) as f:
+            file_encoding = detect_file_encoding(self.file_name)
+            with open(self.file_name, encoding=file_encoding) as f:
                 self.total_lines = sum(1 for _ in f)
+                self.trigger.emit(0, self.total_lines)
 
-            self.trigger.emit(0, self.total_lines)
-
-            # 逐行读取源文件，按设定行数分割并写入新文件
-            with open(self.file_name, encoding=detect_file_encoding(self.file_name)) as f:
+            with open(self.file_name, encoding=file_encoding) as f:
                 temp_count = 0
                 temp_content = []
                 part_num = 1
 
-                for line_count, line in enumerate(f, start=1):
+                for line_num, line in enumerate(f, start=1):
+                    self.current_lines = line_num
                     temp_content.append(line)
                     temp_count += 1
 
                     if temp_count == self.line_count:
-                        self.write_file(part_num, temp_count, temp_content)
+                        self.write_file(part_num, temp_count, temp_content, file_encoding)
                         part_num += 1
                         temp_count = 0
                         temp_content = []
-
-                    self.current_lines += 1
 
                     # 当进度百分比变化时才发送信号1更改状态
                     current_percent = int((self.current_lines / self.total_lines) * 100)
@@ -89,7 +89,7 @@ class SplitFiles(QThread):
                         self.trigger.emit(1, self.current_precent)
 
                 if temp_content:
-                    self.write_file(part_num, temp_count, temp_content)
+                    self.write_file(part_num, temp_count, temp_content, file_encoding)
         except IOError as err:
             print(err)
 
@@ -120,7 +120,7 @@ class SplitFiles(QThread):
         part_file_name = f"{temp_path}{os.sep}{temp_name}_part{part_num}_{temp_count}{file_extension}"
         return part_file_name
 
-    def write_file(self, part_num, temp_count, line_content):
+    def write_file(self, part_num, temp_count, line_content, file_encoding):
         """
         将按行分割后的内容写入相应的分割文件中
 
@@ -130,13 +130,59 @@ class SplitFiles(QThread):
         :type temp_count: int
         :param line_content: 分割后的内容
         :type line_content: list
+        :param file_encoding: 文件编码
+        :type file_encoding: str
         """
 
         part_file_name = self.get_part_file_name(part_num, temp_count)
 
         try:
-            with open(part_file_name, "w", encoding=detect_file_encoding(self.file_name)) as part_file:
+            with open(part_file_name, "w", encoding=file_encoding) as part_file:
                 part_file.writelines(line_content)
 
+        except IOError as err:
+            print(err)
+
+    # 新增分支业务处理文件大小切割
+    def split_file_by_size(self):
+        if not self.file_name or not os.path.exists(self.file_name):
+            print("%s 不是有效的文件" % self.file_name)
+            return
+
+        try:
+            file_encoding = detect_file_encoding(self.file_name)
+            with open(self.file_name, encoding=file_encoding) as f:
+                self.total_lines = sum(1 for _ in f)
+                self.trigger.emit(0, self.total_lines)
+
+            with open(self.file_name, encoding=file_encoding) as f:
+                temp_count = 0
+                temp_content = []
+                part_num = 1
+                current_file_size = 0
+
+                for line_num, line in enumerate(f, start=1):
+                    self.current_lines = line_num
+                    line_size = len(line.encode(file_encoding))
+                    if current_file_size + line_size < self.max_file_size_kb * 1024:
+                        temp_count += 1
+                        current_file_size += line_size
+                        temp_content.append(line)
+                    else:
+                        # print(str(current_file_size / 1024) + 'kb')
+                        self.write_file(part_num, temp_count, temp_content, file_encoding)
+                        part_num += 1
+                        temp_count = 1
+                        temp_content = [line]
+                        current_file_size = line_size
+
+                    # 当进度百分比变化时才发送信号1更改状态
+                    current_percent = int((self.current_lines / self.total_lines) * 100)
+                    if self.current_precent != current_percent:
+                        self.current_precent = current_percent
+                        self.trigger.emit(1, self.current_precent)
+
+                else:
+                    self.write_file(part_num, temp_count, temp_content, file_encoding)
         except IOError as err:
             print(err)
