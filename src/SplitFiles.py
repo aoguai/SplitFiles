@@ -13,7 +13,7 @@ class SplitFiles(QThread):
     trigger = pyqtSignal(int, object)
     """按行分割文件"""
 
-    def __init__(self, self_windows, file_name, part_path='', line_count=200, max_file_size_kb=10):
+    def __init__(self, self_windows, file_name, part_path='', line_count=None, max_file_size_kb=None):
         """
         初始化分割文件的线程对象
 
@@ -21,10 +21,12 @@ class SplitFiles(QThread):
         :type self_windows: object
         :param file_name: 要分割的源文件名
         :type file_name: str
-        :param line_count: 分割后的文件行数，默认为 200
-        :type line_count: int
         :param part_path: 存放分割文件的目录，默认为空，表示在源文件相同目录下建立临时文件夹
         :type part_path: str
+        :param line_count: 分割后的文件行数
+        :type line_count: int
+        :param max_file_size_kb: 分割后的文件大小，单位kb
+        :type line_count: int
         """
 
         super(SplitFiles, self).__init__()
@@ -58,6 +60,8 @@ class SplitFiles(QThread):
 
         if not self.file_name or not os.path.exists(self.file_name):
             print("%s 不是有效的文件" % self.file_name)
+            return
+        if not self.line_count:
             return
 
         try:
@@ -148,6 +152,8 @@ class SplitFiles(QThread):
         if not self.file_name or not os.path.exists(self.file_name):
             print("%s 不是有效的文件" % self.file_name)
             return
+        if not self.max_file_size_kb:
+            return
 
         try:
             file_encoding = detect_file_encoding(self.file_name)
@@ -163,7 +169,7 @@ class SplitFiles(QThread):
 
                 for line_num, line in enumerate(f, start=1):
                     self.current_lines = line_num
-                    line_size = len(line.encode(file_encoding))
+                    line_size = len(line.encode(file_encoding or 'utf-8'))
                     if current_file_size + line_size < self.max_file_size_kb * 1024:
                         temp_count += 1
                         current_file_size += line_size
