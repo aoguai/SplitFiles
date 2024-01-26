@@ -2,7 +2,7 @@ import base64
 import os
 import sys
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QMessageBox, QFileDialog, QRadioButton, QButtonGroup
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QMessageBox, QFileDialog, QRadioButton, QButtonGroup, QComboBox
 from ProgressBarUI import ProgressBarUI
 from SplitFiles import SplitFiles
 
@@ -51,16 +51,24 @@ class SplitFileGUI(QWidget):
         self.split_button = QPushButton('分割文件')
         self.split_button.clicked.connect(self.split_file)
 
+        file_encoding_prompt = QLabel("选择一个编码:")
+        self.file_encoding_box = QComboBox(self)
+        self.file_encoding_box.addItems(["utf-8", "gbk", "big5", "ascii", "iso-8859-1"])
+        self.file_encoding_box.setInsertPolicy(QComboBox.NoInsert)
+        self.file_encoding_box.setEditable(True)  # 设置为不可编辑，确保只能选择列表中的选项
+
         # 创建布局
         layout = QGridLayout()
         layout.addWidget(file_name_prompt, 0, 0)
         layout.addWidget(self.file_name_field, 0, 1)
-        layout.addWidget(self.line_radio_button, 1, 0)
-        layout.addWidget(self.size_radio_button, 1, 1)
-        layout.addWidget(line_count_prompt, 2, 0)
-        layout.addWidget(self.line_count_field, 2, 1)
-        layout.addWidget(part_path_prompt, 3, 0)
-        layout.addWidget(self.part_path_field, 3, 1)
+        layout.addWidget(file_encoding_prompt, 1, 0)
+        layout.addWidget(self.file_encoding_box, 1, 1)
+        layout.addWidget(self.line_radio_button, 2, 0)
+        layout.addWidget(self.size_radio_button, 2, 1)
+        layout.addWidget(line_count_prompt, 3, 0)
+        layout.addWidget(self.line_count_field, 3, 1)
+        layout.addWidget(part_path_prompt, 4, 0)
+        layout.addWidget(self.part_path_field, 4, 1)
         layout.addWidget(self.split_button, 5, 0, 1, 2)
         layout.addWidget(self.progress_bar_ui, 6, 0, 1, 2)
         self.setLayout(layout)
@@ -125,10 +133,11 @@ class SplitFileGUI(QWidget):
         else:
             part_path = ''
 
+        file_encoding = self.file_encoding_box.currentText()
         if self.size_radio_button.isChecked():
-            self.sf = SplitFiles(self, file_name, part_path, None, line_count)
+            self.sf = SplitFiles(self, file_name, file_encoding, part_path, None, line_count)
         else:
-            self.sf = SplitFiles(self, file_name, part_path, line_count, None)
+            self.sf = SplitFiles(self, file_name, file_encoding, part_path, line_count, None)
         self.sf.start()
         # 线程自定义信号连接的槽函数
         self.sf.trigger.connect(self.handle_events)

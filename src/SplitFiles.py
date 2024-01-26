@@ -1,19 +1,11 @@
 import os
-import chardet
 from PyQt5.QtCore import QThread, pyqtSignal
-
-
-def detect_file_encoding(file_path):
-    with open(file_path, 'rb') as file:
-        # 读取文件前 1024 字节，用于判断文件编码
-        return chardet.detect(file.read(1024))['encoding']
-
 
 class SplitFiles(QThread):
     trigger = pyqtSignal(int, object)
     """按行分割文件"""
 
-    def __init__(self, self_windows, file_name, part_path='', line_count=None, max_file_size_kb=None):
+    def __init__(self, self_windows, file_name, file_encoding='utf-8', part_path='', line_count=None, max_file_size_kb=None):
         """
         初始化分割文件的线程对象
 
@@ -21,6 +13,8 @@ class SplitFiles(QThread):
         :type self_windows: object
         :param file_name: 要分割的源文件名
         :type file_name: str
+        :param file_encoding: 文件编码
+        :type file_encoding: str
         :param part_path: 存放分割文件的目录，默认为空，表示在源文件相同目录下建立临时文件夹
         :type part_path: str
         :param line_count: 分割后的文件行数
@@ -31,6 +25,7 @@ class SplitFiles(QThread):
 
         super(SplitFiles, self).__init__()
         self.file_name = file_name
+        self.file_encoding = file_encoding
         self.line_count = line_count
         self.part_path = part_path
         self.windows = self_windows
@@ -65,12 +60,11 @@ class SplitFiles(QThread):
             return
 
         try:
-            file_encoding = detect_file_encoding(self.file_name)
-            with open(self.file_name, encoding=file_encoding) as f:
+            with open(self.file_name, encoding=self.file_encoding) as f:
                 self.total_lines = sum(1 for _ in f)
                 self.trigger.emit(0, self.total_lines)
 
-            with open(self.file_name, encoding=file_encoding) as f:
+            with open(self.file_name, encoding=self.file_encoding) as f:
                 temp_count = 0
                 temp_content = []
                 part_num = 1
@@ -81,7 +75,7 @@ class SplitFiles(QThread):
                     temp_count += 1
 
                     if temp_count == self.line_count:
-                        self.write_file(part_num, temp_count, temp_content, file_encoding)
+                        self.write_file(part_num, temp_count, temp_content)
                         part_num += 1
                         temp_count = 0
                         temp_content = []
@@ -93,7 +87,7 @@ class SplitFiles(QThread):
                         self.trigger.emit(1, self.current_precent)
 
                 if temp_content:
-                    self.write_file(part_num, temp_count, temp_content, file_encoding)
+                    self.write_file(part_num, temp_count, temp_content)
         except IOError as err:
             print(err)
 
@@ -124,7 +118,7 @@ class SplitFiles(QThread):
         part_file_name = f"{temp_path}{os.sep}{temp_name}_part{part_num}_{temp_count}{file_extension}"
         return part_file_name
 
-    def write_file(self, part_num, temp_count, line_content, file_encoding):
+    def write_file(self, part_num, temp_count, line_content):
         """
         将按行分割后的内容写入相应的分割文件中
 
@@ -134,14 +128,12 @@ class SplitFiles(QThread):
         :type temp_count: int
         :param line_content: 分割后的内容
         :type line_content: list
-        :param file_encoding: 文件编码
-        :type file_encoding: str
         """
 
         part_file_name = self.get_part_file_name(part_num, temp_count)
 
         try:
-            with open(part_file_name, "w", encoding=file_encoding) as part_file:
+            with open(part_file_name, "w", encoding=self.file_encoding) as part_file:
                 part_file.writelines(line_content)
 
         except IOError as err:
@@ -156,12 +148,11 @@ class SplitFiles(QThread):
             return
 
         try:
-            file_encoding = detect_file_encoding(self.file_name)
-            with open(self.file_name, encoding=file_encoding) as f:
+            with open(self.file_name, encoding=self.file_encoding) as f:
                 self.total_lines = sum(1 for _ in f)
                 self.trigger.emit(0, self.total_lines)
 
-            with open(self.file_name, encoding=file_encoding) as f:
+            with open(self.file_name, encoding=self.file_encoding) as f:
                 temp_count = 0
                 temp_content = []
                 part_num = 1
@@ -169,14 +160,14 @@ class SplitFiles(QThread):
 
                 for line_num, line in enumerate(f, start=1):
                     self.current_lines = line_num
-                    line_size = len(line.encode(file_encoding or 'utf-8'))
+                    line_size = len(line.encode(self.file_encoding))
                     if current_file_size + line_size < self.max_file_size_kb * 1024:
                         temp_count += 1
                         current_file_size += line_size
                         temp_content.append(line)
                     else:
                         # print(str(current_file_size / 1024) + 'kb')
-                        self.write_file(part_num, temp_count, temp_content, file_encoding)
+                        self.write_file(part_num, temp_count, temp_content)
                         part_num += 1
                         temp_count = 1
                         temp_content = [line]
@@ -189,6 +180,6 @@ class SplitFiles(QThread):
                         self.trigger.emit(1, self.current_precent)
 
                 else:
-                    self.write_file(part_num, temp_count, temp_content, file_encoding)
+                    self.write_file(part_num, temp_count, temp_content)
         except IOError as err:
             print(err)
