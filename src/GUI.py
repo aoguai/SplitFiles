@@ -2,7 +2,8 @@ import base64
 import os
 import sys
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QMessageBox, QFileDialog, QRadioButton, QButtonGroup, QComboBox
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QMessageBox, \
+    QFileDialog, QRadioButton, QButtonGroup, QComboBox
 from ProgressBarUI import ProgressBarUI
 from SplitFiles import SplitFiles
 
@@ -29,29 +30,32 @@ class SplitFileGUI(QWidget):
         self.file_name_field.setMouseTracking(True)
         self.file_name_field.installEventFilter(self)
         self.line_count_field = QLineEdit()
+        self.line_count_field.setPlaceholderText('1')
         self.part_path_field = QLineEdit()
 
         # 创建一个按钮组
         self.buttonGroup = QButtonGroup()
-    
+
         self.line_radio_button = QRadioButton("按行数分割")
         self.line_radio_button.setChecked(True)  # 默认按行数分割
+        self.line_radio_button.toggled.connect(self.on_radio_button_toggled)
         self.size_radio_button = QRadioButton("按大小分割")
-        self.size_radio_button.setChecked(False) 
+        self.size_radio_button.setChecked(False)
+        self.size_radio_button.toggled.connect(self.on_radio_button_toggled)
 
         self.buttonGroup.addButton(self.size_radio_button)
         self.buttonGroup.addButton(self.line_radio_button)
 
         # 创建文本提示
         file_name_prompt = QLabel('请输入欲分割的文件路径：')
-        line_count_prompt = QLabel('请输入欲分割行数/大小kb：')
+        line_count_prompt = QLabel('请输入欲分割行数/大小(不含单位默认kb)：')
         part_path_prompt = QLabel('请输入欲保存的目录(留空默认当前目录下自动新建子目录)：')
 
         # Create button
         self.split_button = QPushButton('分割文件')
         self.split_button.clicked.connect(self.split_file)
 
-        file_encoding_prompt = QLabel("选择一个编码:")
+        file_encoding_prompt = QLabel("请选择文件编码:")
         self.file_encoding_box = QComboBox(self)
         self.file_encoding_box.addItems(["utf-8", "gbk", "big5", "ascii", "iso-8859-1"])
         self.file_encoding_box.setInsertPolicy(QComboBox.NoInsert)
@@ -114,30 +118,47 @@ class SplitFileGUI(QWidget):
 
         file_name = self.file_name_field.text()
         line_count_text = self.line_count_field.text().strip()
-
-        if line_count_text.isdigit() and int(line_count_text) > 0:
-            line_count = int(line_count_text)
-        else:
-            QMessageBox.information(self, "警告", "请输入有效的分割行数（大于0的整数）")
-            return
+        part_path = self.part_path_field.text()
 
         if not file_name or not os.path.exists(file_name):
-            QMessageBox.information(self, "警告", "%s 不是有效的文件" % file_name)
+            QMessageBox.information(self, "警告", f"{file_name} 不是有效的文件")
             return
 
-        part_path = self.part_path_field.text()
-        if part_path:
-            if not os.path.exists(part_path):
-                QMessageBox.information(self, "警告", "请输入有效的保存目录")
-                return
-        else:
-            part_path = ''
+        if part_path and not os.path.exists(part_path):
+            QMessageBox.information(self, "警告", "请输入有效的保存目录")
+            return
 
         file_encoding = self.file_encoding_box.currentText()
+
+        # 判断分割方式
         if self.size_radio_button.isChecked():
-            self.sf = SplitFiles(self, file_name, file_encoding, part_path, None, line_count)
+            # 按大小分割
+            if line_count_text.isdigit():
+                max_file_size_kb = int(line_count_text)
+            else:
+                unit_map = {'kb': 1, 'mb': 1024, 'gb': 1024 * 1024, 'tb': 1024 * 1024 * 1024}
+                suffix = line_count_text[-2:].lower()
+                size = line_count_text[:-2]
+                if not size.isdigit():
+                    QMessageBox.information(self, "警告", "请输入有效的分割大小（大于0的整数或者带单位的数字）")
+                    return
+                multiplier = unit_map.get(suffix)
+                if multiplier is None:
+                    QMessageBox.information(self, "警告", "请输入有效的分割大小（大于0的整数或者带单位的数字）\n注意：单位只支持kb/mb/gb/tb")
+                    return
+                max_file_size_kb = int(size) * multiplier
+            self.sf = SplitFiles(self, file_name, file_encoding, part_path or '', None, max_file_size_kb)
         else:
-            self.sf = SplitFiles(self, file_name, file_encoding, part_path, line_count, None)
+            # 按行数分割
+            if not line_count_text.isdigit():
+                QMessageBox.information(self, "警告", "请输入有效的分割行数（大于0的整数）")
+                return
+            line_count = int(line_count_text)
+            if line_count <= 0:
+                QMessageBox.information(self, "警告", "请输入大于0的行数")
+                return
+            self.sf = SplitFiles(self, file_name, file_encoding, part_path or '', line_count, None)
+
         self.sf.start()
         # 线程自定义信号连接的槽函数
         self.sf.trigger.connect(self.handle_events)
@@ -184,13 +205,17 @@ class SplitFileGUI(QWidget):
         if file_path:
             self.file_name_field.setText(file_path)
 
+    def on_radio_button_toggled(self):
+        sender = self.sender()
+        if sender.text() == "按行数分割":
+            if sender.isChecked():
+                self.line_count_field.setPlaceholderText('1')
+                return
+        self.line_count_field.setPlaceholderText('1/1kb/1mb/1gb/1tb')
+        return
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
-    # 加载QSS文件
-    # with open('style/lightstyle.qss', 'r') as file:
-    #     app.setStyleSheet(file.read())
-
     gui = SplitFileGUI()
     sys.exit(app.exec_())

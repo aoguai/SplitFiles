@@ -1,11 +1,13 @@
 import os
 from PyQt5.QtCore import QThread, pyqtSignal
 
+
 class SplitFiles(QThread):
     trigger = pyqtSignal(int, object)
     """按行分割文件"""
 
-    def __init__(self, self_windows, file_name, file_encoding='utf-8', part_path='', line_count=None, max_file_size_kb=None):
+    def __init__(self, self_windows, file_name, file_encoding='utf-8', part_path='', line_count=None,
+                 max_file_size_kb=None):
         """
         初始化分割文件的线程对象
 
@@ -18,9 +20,9 @@ class SplitFiles(QThread):
         :param part_path: 存放分割文件的目录，默认为空，表示在源文件相同目录下建立临时文件夹
         :type part_path: str
         :param line_count: 分割后的文件行数
-        :type line_count: int
+        :type line_count: int or None
         :param max_file_size_kb: 分割后的文件大小，单位kb
-        :type line_count: int
+        :type line_count: int or None
         """
 
         super(SplitFiles, self).__init__()
@@ -38,7 +40,7 @@ class SplitFiles(QThread):
         """
         重写 QThread 的 run 方法，在线程启动时执行分割文件的操作
         """
-        if (self.max_file_size_kb):
+        if self.max_file_size_kb:
             self.split_file_by_size()
         else:
             self.split_file()
