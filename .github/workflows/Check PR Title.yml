@@ -20,19 +20,6 @@ jobs:
           filterOutClosed: true
           filterOutDraft: true
 
-      - run: echo "PR ${prNumber} ${prTitle} at ${prUrl} is ${prJSON}"
-        if: steps.PR.outputs.pr_found == 'true'
-        env:
-          prJSON: ${{ toJSON(fromJSON(steps.PR.outputs.pr)) }}
-          prNumber: ${{ steps.PR.outputs.number }}
-          prUrl: ${{ steps.PR.outputs.pr_url }}
-          prTitle: ${{ steps.PR.outputs.pr_title }}
-          prBody: ${{ steps.PR.outputs.pr_body }}
-          prCreatedAt: ${{ steps.PR.outputs.pr_created_at }}
-          prMergedAt: ${{ steps.PR.outputs.pr_merged_at }}
-          prClosedAt: ${{ steps.PR.outputs.pr_closed_at }}
-          prLabel: ${{ steps.PR.outputs.pr_labels }}
-
       - name: Check PR Title Format
         run: |
           pr_title="${{ steps.PR.outputs.pr_title }}"
