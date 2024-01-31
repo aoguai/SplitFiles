@@ -58,7 +58,7 @@ python GUI.py
 <table>
   <tbody>
     <tr>
-      <td align="center" valign="top" width="100%"><a href="https://github.com/darnell8"><img src="https://avatars.githubusercontent.com/u/119397407?v=4?s=100" width="100px;" alt="darnell8"/><br /><sub><b>darnell8</b></sub></a><br /><a href="https://github.com/aoguai/SplitFiles/commits/master?author=darnell8" title="Code">💻</a><a href="https://github.com/aoguai/SplitFiles//issues?q=author:darnell8" title="Bug reports">🐛</a><a href="https://github.com/aoguai/SplitFiles/commits/master?author=darnell8" title="Bug reports">🚧</a></td>
+      <td align="center" valign="top" width="100%"><a href="https://github.com/darnell8"><img src="https://avatars.githubusercontent.com/u/119397407?v=4?s=100" width="100px;" alt="darnell8"/><br /><sub><b>darnell8</b></sub></a><br /><a href="https://github.com/aoguai/SplitFiles/commits/master?author=darnell8" title="Code">💻</a><a href="https://github.com/aoguai/SplitFiles/issues?q=author:darnell8" title="Bug reports">🐛</a><a href="https://github.com/aoguai/SplitFiles/commits/master?author=darnell8" title="Bug reports">🚧</a></td>
     </tr>
   </tbody>
 </table>
@@ -92,7 +92,7 @@ python GUI.py
   - **支持 切割 csv 类型文件**
   - 重构 代码结构，使代码更加规范
   - 修复 分割大文件时拖动UI卡顿问题
-  - 修复 阻塞主线程BUG,异步化切割线程
+  - 修复 阻塞主线程BUG，异步化切割线程
 
 <details> 
     <summary>往期更新日志</summary>
