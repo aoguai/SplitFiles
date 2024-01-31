@@ -3,53 +3,44 @@ import os
 import sys
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QMessageBox, \
-    QFileDialog, QRadioButton, QButtonGroup, QComboBox
-from ProgressBarUI import ProgressBarUI
+    QRadioButton, QButtonGroup, QComboBox
+from ui.FileListWidget import FileListWidget
+from ui.DragRectWidget import DragRectWidget
 from SplitFiles import SplitFiles
-
+from model.FileSignalData import FileSignalData
 
 class SplitFileGUI(QWidget):
+    _worker_dict: dict[str, SplitFiles] = {}
+
     def __init__(self):
         """
         初始化 GUI 界面
 
         包括拖放文件支持、进度条、输入字段、文本提示、按钮、布局和窗口属性的设置。
         """
-
         super().__init__()
+        self.init_ui()
+
+    def init_ui(self):
         # 支持拖放文件
         self.setAcceptDrops(True)
-        # 调用Drops方法
-        # Create progress bar
-        self.progress_bar_ui = ProgressBarUI()
-
-        # 创建输入字段
-        self.file_name_field = QLineEdit()
-        # 为输入框添加双击事件
-        self.file_name_field.setReadOnly(True)
-        self.file_name_field.setMouseTracking(True)
-        self.file_name_field.installEventFilter(self)
         self.line_count_field = QLineEdit()
-        self.line_count_field.setPlaceholderText('1')
         self.part_path_field = QLineEdit()
 
         # 创建一个按钮组
         self.buttonGroup = QButtonGroup()
-
         self.line_radio_button = QRadioButton("按行数分割")
         self.line_radio_button.setChecked(True)  # 默认按行数分割
         self.line_radio_button.toggled.connect(self.on_radio_button_toggled)
         self.size_radio_button = QRadioButton("按大小分割")
         self.size_radio_button.setChecked(False)
         self.size_radio_button.toggled.connect(self.on_radio_button_toggled)
-
         self.buttonGroup.addButton(self.size_radio_button)
         self.buttonGroup.addButton(self.line_radio_button)
 
         # 创建文本提示
-        file_name_prompt = QLabel('请输入欲分割的文件路径：')
-        line_count_prompt = QLabel('请输入欲分割行数/大小(不含单位默认kb)：')
-        part_path_prompt = QLabel('请输入欲保存的目录(留空默认当前目录下自动新建子目录)：')
+        line_count_prompt = QLabel('请输入欲分割行数/大小：')
+        part_path_prompt = QLabel('请输入欲保存的目录\n(留空默认当前目录下自动新建子目录)：')
 
         # Create button
         self.split_button = QPushButton('分割文件')
@@ -58,13 +49,17 @@ class SplitFileGUI(QWidget):
         file_encoding_prompt = QLabel("请选择文件编码:")
         self.file_encoding_box = QComboBox(self)
         self.file_encoding_box.addItems(["utf-8", "gbk", "big5", "ascii", "iso-8859-1"])
-        self.file_encoding_box.setInsertPolicy(QComboBox.NoInsert)
-        self.file_encoding_box.setEditable(True)  # 设置为不可编辑，确保只能选择列表中的选项
+        self.file_encoding_box.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        self.file_encoding_box.setEditable(True)
+
+        drag_rect_widget = DragRectWidget()
+        drag_rect_widget.file_dropped.connect(lambda file_paths: self.file_list_widget.add_files(file_paths))
+        self.file_list_widget = FileListWidget()
+        self.file_list_widget.fileChanged.connect(self.ui_changed_trigger)
 
         # 创建布局
         layout = QGridLayout()
-        layout.addWidget(file_name_prompt, 0, 0)
-        layout.addWidget(self.file_name_field, 0, 1)
+
         layout.addWidget(file_encoding_prompt, 1, 0)
         layout.addWidget(self.file_encoding_box, 1, 1)
         layout.addWidget(self.line_radio_button, 2, 0)
@@ -73,8 +68,12 @@ class SplitFileGUI(QWidget):
         layout.addWidget(self.line_count_field, 3, 1)
         layout.addWidget(part_path_prompt, 4, 0)
         layout.addWidget(self.part_path_field, 4, 1)
-        layout.addWidget(self.split_button, 5, 0, 1, 2)
-        layout.addWidget(self.progress_bar_ui, 6, 0, 1, 2)
+        layout.addWidget(drag_rect_widget, 5, 0, 1, 2)
+        layout.addWidget(self.split_button, 6, 0, 1, 2)
+        layout.addWidget(self.file_list_widget, 8, 0, 1, 2)
+
+        layout.setColumnStretch(0, 4)
+        layout.setColumnStretch(1, 6)
         self.setLayout(layout)
 
         # 设置窗口图标
@@ -87,7 +86,13 @@ class SplitFileGUI(QWidget):
         self.setWindowTitle('奥怪文件分割v1.2')
         self.show()
 
-    def handle_events(self, code, data=None):
+    def ui_changed_trigger(self):
+        """
+        UI 变化时触发的信号处理函数。
+        """
+        self.split_file()
+
+    def handle_events(self, file_signal_data: FileSignalData):
         """
         处理线程事件，更新进度条和显示分割完成信息。
 
@@ -96,18 +101,7 @@ class SplitFileGUI(QWidget):
         :param data: 事件数据，用于设置进度条范围的最大值
         :type data: int or None
         """
-
-        # print("接收到信号 %s, 承载数据为 %s" % (code, data))
-        if code == 0:
-            return
-
-        if code == 1:
-            self.progress_bar_ui.set_progress(data)  # Update progress bar value
-
-            if data == 100:
-                QMessageBox.information(self, "已完成", "文件分割已完成！")
-                self.split_button.setEnabled(True)
-            return
+        self.file_list_widget.set_progress(file_signal_data.file_path, file_signal_data.progress_value)
 
     def split_file(self):
         """
@@ -116,55 +110,52 @@ class SplitFileGUI(QWidget):
         如果输入不合法，显示相应警告信息。
         """
 
-        file_name = self.file_name_field.text()
         line_count_text = self.line_count_field.text().strip()
         part_path = self.part_path_field.text()
-
-        if not file_name or not os.path.exists(file_name):
-            QMessageBox.information(self, "警告", f"{file_name} 不是有效的文件")
-            return
 
         if part_path and not os.path.exists(part_path):
             QMessageBox.information(self, "警告", "请输入有效的保存目录")
             return
-
+        
         file_encoding = self.file_encoding_box.currentText()
 
-        # 判断分割方式
-        if self.size_radio_button.isChecked():
-            # 按大小分割
-            if line_count_text.isdigit():
-                max_file_size_kb = int(line_count_text)
-            else:
-                unit_map = {'kb': 1, 'mb': 1024, 'gb': 1024 * 1024, 'tb': 1024 * 1024 * 1024}
-                suffix = line_count_text[-2:].lower()
-                size = line_count_text[:-2]
-                if not size.isdigit():
-                    QMessageBox.information(self, "警告", "请输入有效的分割大小（大于0的整数或者带单位的数字）")
-                    return
-                multiplier = unit_map.get(suffix)
-                if multiplier is None:
-                    QMessageBox.information(self, "警告", "请输入有效的分割大小（大于0的整数或者带单位的数字）\n注意：单位只支持kb/mb/gb/tb")
-                    return
-                max_file_size_kb = int(size) * multiplier
-            self.sf = SplitFiles(self, file_name, file_encoding, part_path or '', None, max_file_size_kb)
-        else:
-            # 按行数分割
-            if not line_count_text.isdigit():
-                QMessageBox.information(self, "警告", "请输入有效的分割行数（大于0的整数）")
-                return
-            line_count = int(line_count_text)
-            if line_count <= 0:
-                QMessageBox.information(self, "警告", "请输入大于0的行数")
-                return
-            self.sf = SplitFiles(self, file_name, file_encoding, part_path or '', line_count, None)
+        for file_path in self.file_list_widget.get_file_paths_dic().keys():
+            if file_path in self._worker_dict:
+                continue
 
-        self.sf.start()
-        # 线程自定义信号连接的槽函数
-        self.sf.trigger.connect(self.handle_events)
-        # 重置滚动条
-        self.progress_bar_ui.reset()
-        self.split_button.setEnabled(False)
+            # 判断分割方式
+            if self.size_radio_button.isChecked():
+                # 按大小分割
+                if line_count_text.isdigit():
+                    max_file_size_kb = int(line_count_text)
+                else:
+                    unit_map = {'kb': 1, 'mb': 1024, 'gb': 1024 * 1024, 'tb': 1024 * 1024 * 1024}
+                    suffix = line_count_text[-2:].lower()
+                    size = line_count_text[:-2]
+                    if not size.isdigit():
+                        QMessageBox.information(self, "警告", "请输入有效的分割大小（大于0的整数或者带单位的数字）")
+                        return
+                    multiplier = unit_map.get(suffix)
+                    if multiplier is None:
+                        QMessageBox.information(self, "警告", "请输入有效的分割大小（大于0的整数或者带单位的数字）\n注意：单位只支持kb/mb/gb/tb")
+                        return
+                    max_file_size_kb = int(size) * multiplier
+                sf = SplitFiles(self, file_path, file_encoding, part_path or '', None, max_file_size_kb)
+            else:
+                # 按行数分割
+                if not line_count_text.isdigit():
+                    QMessageBox.information(self, "警告", "请输入有效的分割行数（大于0的整数）")
+                    return
+                line_count = int(line_count_text)
+                if line_count <= 0:
+                    QMessageBox.information(self, "警告", "请输入大于0的行数")
+                    return
+                sf = SplitFiles(self, file_path, file_encoding, part_path or '', line_count, None)
+
+            sf.start()
+            # 线程自定义信号连接的槽函数
+            sf.trigger.connect(self.handle_events)
+            self._worker_dict[file_path] = sf
 
     def dragEnterEvent(self, event):
         """
@@ -186,34 +177,20 @@ class SplitFileGUI(QWidget):
         :param event: 拖放事件
         :type event: QDropEvent
         """
-
-        file_path = event.mimeData().urls()[0].toLocalFile()
-        if file_path.endswith(('.txt', '.csv', '.jsonl')):
-            # 将文件名字段设置为文件路径
-            self.file_name_field.setText(file_path)
-        else:
-            QMessageBox.information(self, "警告", "只支持可分割文件")
-
-    def eventFilter(self, obj, event):
-        if obj == self.file_name_field and event.type() == 2:  # 2表示鼠标双击事件
-            self.select_file()
-        return super().eventFilter(obj, event)
-
-    def select_file(self):
-        file_dialog = QFileDialog(self)
-        file_path, _ = file_dialog.getOpenFileName(self, "选择文件", "", "可分割文件 (*.txt; *.csv; *.jsonl)")
-        if file_path:
-            self.file_name_field.setText(file_path)
+        mime_data = event.mimeData()
+        if mime_data.hasUrls():
+            file_paths = [url.toLocalFile() for url in mime_data.urls()]
+            self.file_list_widget.add_files(file_paths) 
 
     def on_radio_button_toggled(self):
         sender = self.sender()
-        if sender.text() == "按行数分割":
-            if sender.isChecked():
-                self.line_count_field.setPlaceholderText('1')
-                return
-        self.line_count_field.setPlaceholderText('1/1kb/1mb/1gb/1tb')
-        return
-
+        if not isinstance(sender, QRadioButton):
+            return
+        
+        if sender.text() == "按行数分割" and sender.isChecked():
+            self.line_count_field.setPlaceholderText('1')
+        else:
+            self.line_count_field.setPlaceholderText('1/1kb/1mb/1gb/1tb')
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

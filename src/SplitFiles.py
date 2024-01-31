@@ -1,13 +1,14 @@
 import os
+import typing
 from PyQt5.QtCore import QThread, pyqtSignal
-
+from model.FileSignalData import FileSignalData
 
 class SplitFiles(QThread):
-    trigger = pyqtSignal(int, object)
+    trigger = pyqtSignal(FileSignalData)
     """按行分割文件"""
 
-    def __init__(self, self_windows, file_name, file_encoding='utf-8', part_path='', line_count=None,
-                 max_file_size_kb=None):
+    def __init__(self, self_windows, file_name: str, file_encoding='utf-8', part_path='', line_count: typing.Optional[int]=None,
+                 max_file_size_kb: typing.Optional[int]=None):
         """
         初始化分割文件的线程对象
 
@@ -64,7 +65,7 @@ class SplitFiles(QThread):
         try:
             with open(self.file_name, encoding=self.file_encoding) as f:
                 self.total_lines = sum(1 for _ in f)
-                self.trigger.emit(0, self.total_lines)
+                self.trigger.emit(FileSignalData(self.file_name, self.total_lines, 0))
 
             with open(self.file_name, encoding=self.file_encoding) as f:
                 temp_count = 0
@@ -86,14 +87,14 @@ class SplitFiles(QThread):
                     current_percent = int((self.current_lines / self.total_lines) * 100)
                     if self.current_precent != current_percent:
                         self.current_precent = current_percent
-                        self.trigger.emit(1, self.current_precent)
+                        self.trigger.emit(FileSignalData(self.file_name, self.total_lines, self.current_precent))
 
                 if temp_content:
                     self.write_file(part_num, temp_count, temp_content)
         except IOError as err:
             print(err)
 
-    def get_part_file_name(self, part_num, temp_count):
+    def get_part_file_name(self, part_num: int, temp_count: int):
         """
         获取分割后的文件名称
 
@@ -120,7 +121,7 @@ class SplitFiles(QThread):
         part_file_name = f"{temp_path}{os.sep}{temp_name}_part{part_num}_{temp_count}{file_extension}"
         return part_file_name
 
-    def write_file(self, part_num, temp_count, line_content):
+    def write_file(self, part_num: int, temp_count: int, line_content: list[str]):
         """
         将按行分割后的内容写入相应的分割文件中
 
@@ -152,7 +153,7 @@ class SplitFiles(QThread):
         try:
             with open(self.file_name, encoding=self.file_encoding) as f:
                 self.total_lines = sum(1 for _ in f)
-                self.trigger.emit(0, self.total_lines)
+                self.trigger.emit(FileSignalData(self.file_name, self.total_lines, 0))
 
             with open(self.file_name, encoding=self.file_encoding) as f:
                 temp_count = 0
@@ -179,7 +180,7 @@ class SplitFiles(QThread):
                     current_percent = int((self.current_lines / self.total_lines) * 100)
                     if self.current_precent != current_percent:
                         self.current_precent = current_percent
-                        self.trigger.emit(1, self.current_precent)
+                        self.trigger.emit(FileSignalData(self.file_name, self.total_lines, self.current_precent))
 
                 else:
                     self.write_file(part_num, temp_count, temp_content)
