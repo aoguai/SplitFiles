@@ -1,6 +1,7 @@
 import os
 from PyQt5.QtWidgets import QGridLayout, QLabel, QWidget, QProgressBar
 
+
 class FileItemWidget(QWidget):
     def __init__(self, file_path: str):
         super().__init__()
@@ -25,9 +26,9 @@ class FileItemWidget(QWidget):
 
         self.setLayout(self.grid_layout)
 
-    def format_size(self, size: float):
+    @staticmethod
+    def format_size(size: float):
         # 将文件大小格式化为人类可读的字符串
-        unit = ''
         for unit in ['b', 'kb', 'mb', 'gb', 'tb']:
             if size < 1024.0:
                 break
@@ -39,4 +40,3 @@ class FileItemWidget(QWidget):
 
     def is_complete(self):
         return self._progress_bar.value() == 100
-    

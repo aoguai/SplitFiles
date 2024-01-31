@@ -1,7 +1,7 @@
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPainter, QColor, QPen
 from PyQt5.QtWidgets import QWidget, QFileDialog
-from PyQt5.QtCore import Qt, pyqtSignal
+
 
 class DragRectWidget(QWidget):
     file_dropped = pyqtSignal(list)
@@ -47,5 +47,5 @@ class DragRectWidget(QWidget):
         file_paths, _ = file_dialog.getOpenFileNames(self, "选择文件", "", "可分割文件 (*.txt; *.csv; *.jsonl)")
 
         if file_paths:
-             # 发射信号，将文件路径列表传递给连接的槽
+            # 发射信号，将文件路径列表传递给连接的槽
             self.file_dropped.emit(file_paths)

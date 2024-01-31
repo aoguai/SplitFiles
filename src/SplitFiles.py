@@ -1,14 +1,18 @@
 import os
 import typing
 from PyQt5.QtCore import QThread, pyqtSignal
+from typing import List
+
 from model.FileSignalData import FileSignalData
+
 
 class SplitFiles(QThread):
     trigger = pyqtSignal(FileSignalData)
     """按行分割文件"""
 
-    def __init__(self, self_windows, file_name: str, file_encoding='utf-8', part_path='', line_count: typing.Optional[int]=None,
-                 max_file_size_kb: typing.Optional[int]=None):
+    def __init__(self, self_windows, file_name: str, file_encoding='utf-8', part_path='',
+                 line_count: typing.Optional[int] = None,
+                 max_file_size_kb: typing.Optional[int] = None):
         """
         初始化分割文件的线程对象
 
@@ -121,7 +125,7 @@ class SplitFiles(QThread):
         part_file_name = f"{temp_path}{os.sep}{temp_name}_part{part_num}_{temp_count}{file_extension}"
         return part_file_name
 
-    def write_file(self, part_num: int, temp_count: int, line_content: list[str]):
+    def write_file(self, part_num: int, temp_count: int, line_content: List[str]):
         """
         将按行分割后的内容写入相应的分割文件中
 
@@ -130,7 +134,7 @@ class SplitFiles(QThread):
         :param temp_count: 临时计数，用于文件名
         :type temp_count: int
         :param line_content: 分割后的内容
-        :type line_content: list
+        :type line_content: List[str]
         """
 
         part_file_name = self.get_part_file_name(part_num, temp_count)

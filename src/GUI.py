@@ -4,13 +4,16 @@ import sys
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QMessageBox, \
     QRadioButton, QButtonGroup, QComboBox
+from typing import Dict
+
 from ui.FileListWidget import FileListWidget
 from ui.DragRectWidget import DragRectWidget
 from SplitFiles import SplitFiles
 from model.FileSignalData import FileSignalData
 
+
 class SplitFileGUI(QWidget):
-    _worker_dict: dict[str, SplitFiles] = {}
+    _worker_dict: Dict[str, SplitFiles] = {}
 
     def __init__(self):
         """
@@ -96,10 +99,9 @@ class SplitFileGUI(QWidget):
         """
         处理线程事件，更新进度条和显示分割完成信息。
 
-        :param code: 事件代码，0表示更新总量，1表示更新进度条值
-        :type code: int
-        :param data: 事件数据，用于设置进度条范围的最大值
-        :type data: int or None
+        :param file_signal_data: 文件信号数据
+        :type file_signal_data: FileSignalData
+
         """
         self.file_list_widget.set_progress(file_signal_data.file_path, file_signal_data.progress_value)
 
@@ -116,7 +118,7 @@ class SplitFileGUI(QWidget):
         if part_path and not os.path.exists(part_path):
             QMessageBox.information(self, "警告", "请输入有效的保存目录")
             return
-        
+
         file_encoding = self.file_encoding_box.currentText()
 
         for file_path in self.file_list_widget.get_file_paths_dic().keys():
@@ -137,7 +139,8 @@ class SplitFileGUI(QWidget):
                         return
                     multiplier = unit_map.get(suffix)
                     if multiplier is None:
-                        QMessageBox.information(self, "警告", "请输入有效的分割大小（大于0的整数或者带单位的数字）\n注意：单位只支持kb/mb/gb/tb")
+                        QMessageBox.information(self, "警告",
+                                                "请输入有效的分割大小（大于0的整数或者带单位的数字）\n注意：单位只支持kb/mb/gb/tb")
                         return
                     max_file_size_kb = int(size) * multiplier
                 sf = SplitFiles(self, file_path, file_encoding, part_path or '', None, max_file_size_kb)
@@ -180,17 +183,18 @@ class SplitFileGUI(QWidget):
         mime_data = event.mimeData()
         if mime_data.hasUrls():
             file_paths = [url.toLocalFile() for url in mime_data.urls()]
-            self.file_list_widget.add_files(file_paths) 
+            self.file_list_widget.add_files(file_paths)
 
     def on_radio_button_toggled(self):
         sender = self.sender()
         if not isinstance(sender, QRadioButton):
             return
-        
+
         if sender.text() == "按行数分割" and sender.isChecked():
             self.line_count_field.setPlaceholderText('1')
         else:
             self.line_count_field.setPlaceholderText('1/1kb/1mb/1gb/1tb')
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
