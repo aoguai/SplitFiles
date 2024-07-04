@@ -3,6 +3,10 @@ from PyQt5.QtWidgets import QWidget, QProgressBar, QVBoxLayout
 
 class ProgressBarWidget(QWidget):
     def __init__(self):
+        """
+        进度条组件
+        """
+
         super().__init__()
 
         # 创建进度条
@@ -24,6 +28,11 @@ class ProgressBarWidget(QWidget):
         :param value: 进度值
         :type value: int
         """
+
+        if value < 0:
+            value = 0
+        elif value > 100:
+            value = 100
 
         self.progress_bar.setValue(value)
 

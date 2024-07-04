@@ -1,19 +1,24 @@
-import os
 import copy
-from PyQt5.QtWidgets import QGridLayout, QLabel, QWidget
+import os
 from typing import List, Dict
-from .FileItemWidget import FileItemWidget
+
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QGridLayout, QLabel, QWidget, QMessageBox
+
+from .FileItemWidget import FileItemWidget
 
 
 class FileListWidget(QWidget):
-    _file_paths: List[str] = []  # 全部文件列表
-    _file_paths_dic: Dict[str, FileItemWidget] = {}  # 正在处理的文件
     DISPLAY_LIMIT = 3  # 界面显示给用户的文件数量
     fileChanged = pyqtSignal(int)
 
     def __init__(self):
+        """
+        文件列表组件
+        """
         super().__init__()
+        self._file_paths: List[str] = []  # 全部文件列表
+        self._file_paths_dic: Dict[str, FileItemWidget] = {}  # 正在处理的文件
         self.init_ui()
 
     def init_ui(self):
@@ -38,7 +43,7 @@ class FileListWidget(QWidget):
 
             file_name = os.path.basename(file_path)
             if not file_path or not os.path.exists(file_path):
-                print(f"{file_name} 不是有效的文件")
+                QMessageBox.warning(self, "错误", f"{file_name} 不是有效的文件")
                 continue
 
             self._file_paths.append(file_path)
@@ -62,8 +67,8 @@ class FileListWidget(QWidget):
                 self.grid_layout.addWidget(file_item, num_rows, 0, 1, 3)
                 self._file_paths_dic[file_path] = file_item
 
-        # if len(self._file_paths) > self.DISPLAY_LIMIT:
-        #     self.grid_layout.addWidget(QLabel(f'还剩下{len(self._file_paths) - self.DISPLAY_LIMIT}个文件待处理'), self.DISPLAY_LIMIT + 1, 0)
+        if len(self._file_paths) > self.DISPLAY_LIMIT:
+            self.grid_layout.addWidget(QLabel(f'还剩下{len(self._file_paths) - self.DISPLAY_LIMIT}个文件待处理'), self.DISPLAY_LIMIT + 1, 0, 1, 3)
 
     def set_progress(self, file_path: str, progress_value: int):
         if file_path in self._file_paths_dic:

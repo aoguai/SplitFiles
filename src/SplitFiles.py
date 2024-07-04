@@ -1,7 +1,8 @@
 import os
 import typing
-from PyQt5.QtCore import QThread, pyqtSignal
 from typing import List
+
+from PyQt5.QtCore import QThread, pyqtSignal
 
 from model.FileSignalData import FileSignalData
 

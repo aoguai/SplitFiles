@@ -7,6 +7,9 @@ class DragRectWidget(QWidget):
     file_dropped = pyqtSignal(list)
 
     def __init__(self):
+        """
+        拖拽文件的区域
+        """
         super().__init__()
         self.setMinimumSize(150, 100)
         self.setMouseTracking(True)  # 启用鼠标跟踪
@@ -34,7 +37,7 @@ class DragRectWidget(QWidget):
 
     def mousePressEvent(self, event):
         self.select_files()
-        pass
+        super().mousePressEvent(event)
 
     def enterEvent(self, event):
         self.setCursor(Qt.CursorShape.PointingHandCursor)  # 鼠标移到上面时设置为手型样式

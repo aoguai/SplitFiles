@@ -1,15 +1,16 @@
 import base64
 import os
 import sys
+from typing import Dict
+
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QMessageBox, \
     QRadioButton, QButtonGroup, QComboBox
-from typing import Dict
 
-from ui.FileListWidget import FileListWidget
-from ui.DragRectWidget import DragRectWidget
 from SplitFiles import SplitFiles
 from model.FileSignalData import FileSignalData
+from ui.DragRectWidget import DragRectWidget
+from ui.FileListWidget import FileListWidget
 
 
 class SplitFileGUI(QWidget):
@@ -21,6 +22,7 @@ class SplitFileGUI(QWidget):
 
         包括拖放文件支持、进度条、输入字段、文本提示、按钮、布局和窗口属性的设置。
         """
+
         super().__init__()
         self.init_ui()
 
@@ -93,17 +95,19 @@ class SplitFileGUI(QWidget):
         """
         UI 变化时触发的信号处理函数。
         """
+
         self.split_file()
 
     def handle_events(self, file_signal_data: FileSignalData):
         """
         处理线程事件，更新进度条和显示分割完成信息。
-
         :param file_signal_data: 文件信号数据
         :type file_signal_data: FileSignalData
-
         """
+
         self.file_list_widget.set_progress(file_signal_data.file_path, file_signal_data.progress_value)
+        if file_signal_data.progress_value >= 100:
+            self._worker_dict.pop(file_signal_data.file_path, None)
 
     def split_file(self):
         """
@@ -180,12 +184,17 @@ class SplitFileGUI(QWidget):
         :param event: 拖放事件
         :type event: QDropEvent
         """
+
         mime_data = event.mimeData()
         if mime_data.hasUrls():
             file_paths = [url.toLocalFile() for url in mime_data.urls()]
             self.file_list_widget.add_files(file_paths)
 
     def on_radio_button_toggled(self):
+        """
+        按行数分割和按大小分割的单选按钮切换事件处理函数。
+        """
+
         sender = self.sender()
         if not isinstance(sender, QRadioButton):
             return
