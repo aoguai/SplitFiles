@@ -18,17 +18,18 @@ jobs:
       with:
         python-version: 3.8
 
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
     - name: Install PyInstaller
       run: |
         pip install pyinstaller
 
-    - name: Install dependencies
-      run: pip install -r requirements.txt
-
     - name: Build executable
       run: |
-        pyinstaller -F -w -n SplitFiles --icon=assets/logo.ico --version-file assets/my.txt --hidden-import=PyQt5 src/GUI.py src/SplitFiles.py
-        python -m zipfile -c ${{ github.workspace }}/SplitFiles.zip ${{ github.workspace }}/dist/SplitFiles.exe
+        pyinstaller assets/SplitFiles.spec
+        ren dist SplitFiles
+        python -m zipfile -c ${{ github.workspace }}/SplitFiles.zip ${{ github.workspace }}/SplitFiles
 
     # tag 查询github-Release
     - name: query Release Win
